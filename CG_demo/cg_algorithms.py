@@ -26,7 +26,7 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
-        length = max(abs(x1-x0),abs(y1-y0))
+        length = max(abs(x1-x0), abs(y1-y0))
         if length == 0:
             delta_x = delta_y = 0
         else:
@@ -37,16 +37,50 @@ def draw_line(p_list, algorithm):
         y = y0 + 0.5
 
         i = 1
-        while(i<=length):
-            result.append((int(x),int(y)))
+        while(i <= length):
+            result.append((int(x), int(y)))
             x = x + delta_x
             y = y + delta_y
-            i = i+1
-        
+            i = i + 1
+
     elif algorithm == 'Bresenham':
         flag = False
         delta_x = abs(x1-x0)
-        delta_y =
+        delta_y = abs(y1-y0)
+        result.append((x0, y0))
+        if delta_x == 0 and delta_y == 0:  # only a dot
+            return result
+        if(delta_x<delta_y):
+            flag=True
+            x0, y0 = y0, x0
+            x1, y1 = y1, x1
+            delta_x, delta_y = delta_y, delta_x
+            
+
+        if x1 - x0 > 0:
+            tx = 1
+        else:
+            tx = -1
+        if y1 - y0 > 0:
+            ty = 1
+        else:
+            ty = -1
+        
+        x = x0
+        y = y0
+        e = 2*delta_y-delta_x
+        while x!=x1:
+            if e<0:#right 
+                e = e + 2*delta_y
+            else: #top_right
+                e = e + 2*delta_y - 2*delta_x
+                y = y + ty
+            x = x + tx
+            if flag:
+                result.append((y,x))
+            else:
+                result.append((x,y))
+
     return result
 
 

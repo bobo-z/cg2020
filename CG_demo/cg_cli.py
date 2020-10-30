@@ -25,6 +25,7 @@ if __name__ == '__main__':
             if line[0] == 'resetCanvas':
                 width = int(line[1])
                 height = int(line[2])
+                item_dict = {}
             elif line[0] == 'saveCanvas':
                 save_name = line[1]
                 canvas = np.zeros([height, width, 3], np.uint8)
@@ -35,7 +36,9 @@ if __name__ == '__main__':
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'polygon':
-                        pass
+                        pixels = alg.draw_polygon(p_list, algorithm)
+                        for x, y in pixels:
+                            canvas[y, x] = color
                     elif item_type == 'ellipse':
                         pass
                     elif item_type == 'curve':
@@ -53,6 +56,15 @@ if __name__ == '__main__':
                 y1 = int(line[5])
                 algorithm = line[6]
                 item_dict[item_id] = ['line', [[x0, y0], [x1, y1]], algorithm, np.array(pen_color)]
+            elif line[0] == 'drawPolygon':
+                item_id = line[1]
+                algorithm = line[-1]
+                p_list = []
+                for i in range((len(line)-3)//2):
+                    x0 = int(line[2+i*2])
+                    y0 = int(line[2+i*2+1])
+                    p_list.append([x0,y0])
+                    item_dict[item_id] = ['polygon', p_list, algorithm, np.array(pen_color)]
             ...
 
             line = fp.readline()
