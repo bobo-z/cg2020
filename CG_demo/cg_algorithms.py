@@ -50,12 +50,11 @@ def draw_line(p_list, algorithm):
         result.append((x0, y0))
         if delta_x == 0 and delta_y == 0:  # only a dot
             return result
-        if(delta_x<delta_y):
-            flag=True
+        if(delta_x < delta_y):
+            flag = True
             x0, y0 = y0, x0
             x1, y1 = y1, x1
             delta_x, delta_y = delta_y, delta_x
-            
 
         if x1 - x0 > 0:
             tx = 1
@@ -65,21 +64,21 @@ def draw_line(p_list, algorithm):
             ty = 1
         else:
             ty = -1
-        
+
         x = x0
         y = y0
         e = 2*delta_y-delta_x
-        while x!=x1:
-            if e<0:#right 
+        while x != x1:
+            if e < 0:  # right
                 e = e + 2*delta_y
-            else: #top_right
+            else:  # top_right
                 e = e + 2*delta_y - 2*delta_x
                 y = y + ty
             x = x + tx
             if flag:
-                result.append((y,x))
+                result.append((y, x))
             else:
-                result.append((x,y))
+                result.append((x, y))
 
     return result
 
@@ -104,7 +103,68 @@ def draw_ellipse(p_list):
     :param p_list: (list of list of int: [[x0, y0], [x1, y1]]) 椭圆的矩形包围框左上角和右下角顶点坐标
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+    xc = (x0+x1)//2
+    yc = (y0+y1)//2  # the center of ellipse
+    rx = (x1-x0)//2
+    ry = (y1-y0)//2
+    flag = False  # 焦点是否在y轴上
+    if rx < ry:
+        rx, ry = ry, rx
+        flag = True
+    x = 0
+    y = ry
+    ry_sq = ry*ry
+    rx_sq = rx*rx
+    p1 = ry_sq-rx_sq*ry+rx_sq/4
+    res = []
+    if flag:
+        res.extend([(ry+xc, yc), (xc-ry, yc)])
+    else:
+        res.extend([(xc, ry+yc), (xc, yc-ry)])
+    while ry_sq*x < rx_sq*y:
+        # section 1
+        if p1 < 0:
+            p1 = p1 + 2*ry_sq*x+3*ry_sq
+            x = x + 1
+        else:
+            p1 = p1 + 2*ry_sq*x - 2*rx_sq*y+2*rx_sq+3*ry_sq
+            x = x + 1
+            y = y-1
+        
+        if flag:
+            res.extend([(y+xc, x+yc), (y+xc, yc-x), (xc-y, yc+x), (xc-y, yc-x)])
+        else:
+            res.extend([(x+xc, y+yc), (xc-x, y+yc), (x+xc, yc-y), (xc-x, yc-y)])
+        
+
+    p2 = ry_sq*(x+0.5)*(x+0.5)+rx_sq*(y-1)*(y-1)-rx_sq*ry_sq
+    while y > 0:
+        # section 2
+        if p2 >= 0:
+            p2 = p2-2*rx_sq*y+3*rx_sq
+            y = y-1
+        else:
+            p2 = p2+2*ry_sq*x-2*rx_sq*y+2*ry_sq+3*rx_sq
+            x=x+1
+            y = y-1
+
+        if flag:
+            res.extend([(y+xc, x+yc), (y+xc, yc-x), (xc-y, yc+x), (xc-y, yc-x)])
+        else:
+            res.extend([(x+xc, y+yc), (xc-x, y+yc), (x+xc, yc-y), (xc-x, yc-y)])
+
+    if flag:
+        res.extend([(xc, rx+yc), (xc, yc-rx)])
+    else:
+        res.extend([(rx+xc,yc),(xc-rx,yc)])
+    
+    return res
+        
+
+
+
 
 
 def draw_curve(p_list, algorithm):
