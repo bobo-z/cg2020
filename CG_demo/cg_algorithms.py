@@ -107,8 +107,8 @@ def draw_ellipse(p_list):
     x1, y1 = p_list[1]
     xc = (x0+x1)//2
     yc = (y0+y1)//2  # the center of ellipse
-    rx = (x1-x0)//2
-    ry = (y1-y0)//2
+    rx = abs((x1-x0))//2
+    ry = abs((y1-y0))//2
     flag = False  # 焦点是否在y轴上
     if rx < ry:
         rx, ry = ry, rx
@@ -119,12 +119,15 @@ def draw_ellipse(p_list):
     rx_sq = rx*rx
     p1 = ry_sq-rx_sq*ry+rx_sq/4
     res = []
-    if flag:
-        res.extend([(ry+xc, yc), (xc-ry, yc)])
-    else:
-        res.extend([(xc, ry+yc), (xc, yc-ry)])
     while ry_sq*x < rx_sq*y:
         # section 1
+        if flag:
+            xk, yk = y, x
+        else:
+            xk, yk = x, y
+        res.extend([(xk+xc, yk+yc), (xc-xk, yk+yc),
+                    (xk+xc, yc-yk), (xc-xk, yc-yk)])
+
         if p1 < 0:
             p1 = p1 + 2*ry_sq*x+3*ry_sq
             x = x + 1
@@ -132,41 +135,54 @@ def draw_ellipse(p_list):
             p1 = p1 + 2*ry_sq*x - 2*rx_sq*y+2*rx_sq+3*ry_sq
             x = x + 1
             y = y-1
-        
-        if flag:
-            res.extend([(y+xc, x+yc), (y+xc, yc-x), (xc-y, yc+x), (xc-y, yc-x)])
-        else:
-            res.extend([(x+xc, y+yc), (xc-x, y+yc), (x+xc, yc-y), (xc-x, yc-y)])
-        
 
     p2 = ry_sq*(x+0.5)*(x+0.5)+rx_sq*(y-1)*(y-1)-rx_sq*ry_sq
     while y > 0:
         # section 2
+        if flag:
+            xk, yk = y, x
+        else:
+            xk, yk = x, y
+        res.extend([(xk+xc, yk+yc), (xc-xk, yk+yc),
+                    (xk+xc, yc-yk), (xc-xk, yc-yk)])
         if p2 >= 0:
             p2 = p2-2*rx_sq*y+3*rx_sq
             y = y-1
         else:
             p2 = p2+2*ry_sq*x-2*rx_sq*y+2*ry_sq+3*rx_sq
-            x=x+1
+            x = x+1
             y = y-1
-
-        if flag:
-            res.extend([(y+xc, x+yc), (y+xc, yc-x), (xc-y, yc+x), (xc-y, yc-x)])
-        else:
-            res.extend([(x+xc, y+yc), (xc-x, y+yc), (x+xc, yc-y), (xc-x, yc-y)])
 
     if flag:
         res.extend([(xc, rx+yc), (xc, yc-rx)])
     else:
-        res.extend([(rx+xc,yc),(xc-rx,yc)])
-    
+        res.extend([(rx+xc, yc), (xc-rx, yc)])
     return res
-        
 
 
+def Bezier_Point(t, p_list):
+    """针对某个t值计算出对应点
+
+    :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 曲线的控制点坐标列表
+    :param t: (float) 比例
+    :return: (list of int:[x,y]) 对应t值下Bezier曲线生成的点
+    """
+    new_list = []
+    while (len(p_list) > 1):
+        for i in range(0, len(p_list)-1):
+            # Q is a point between p_list[i] and p_list[i+1], parametised by t.
+            Qx = (1-t)*p_list[i][0] + t*p_list[i+1][0]
+            Qy = (1-t)*p_list[i][1] + t*p_list[i+1][1]
+            new_list.append([Qx, Qy])
+        p_list = new_list
+        new_list=[]
+
+    x = int(p_list[0][0])
+    y = int(p_list[0][1])
+    return x,y
 
 
-
+# https://github.com/torresjrjr/Bezier.py
 def draw_curve(p_list, algorithm):
     """绘制曲线
 
@@ -174,7 +190,17 @@ def draw_curve(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'Bezier'和'B-spline'（三次均匀B样条曲线，曲线不必经过首末控制点）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
-    pass
+    res = []
+    if algorithm == "Bezier":
+        t_step = 0.0005
+        t = 0
+        while t <= 1:
+            res.append(Bezier_Point(t, p_list))
+            t = t + t_step
+    else:
+        pass
+
+    return res
 
 
 def translate(p_list, dx, dy):
@@ -185,7 +211,10 @@ def translate(p_list, dx, dy):
     :param dy: (int) 垂直方向平移量
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    res = []
+    for x, y in p_list:
+        res.append((x+dx, y+dy))
+    return res
 
 
 def rotate(p_list, x, y, r):

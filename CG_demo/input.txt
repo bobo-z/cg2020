@@ -1,12 +1,9 @@
 resetCanvas 600 600
-setColor 0 255 0
-drawEllipse ellipse1 100 50 500 400
-saveCanvas 2
-drawEllipse ellipse2 100 100 500 400
-saveCanvas 3
 setColor 255 0 0
-drawEllipse ellipse3 130 181 339 100
-saveCanvas 1
-drawEllipse ellipse4 204 332 377 403
-saveCanvas 4
-
+drawCurve curve3 400 300 300 260 300 100 420 100 580 340 220 340 380 100 500 100 500 260 400 300 Bezier
+drawCurve curve1 50 200 100 100 150 200 Bezier
+drawCurve curve2 50 400 100 300 150 400 200 300 Bezier
+setColor 0 0 255
+drawCurve curve5 250 400 300 300 350 400 400 300 Bezier
+drawCurve curve4 250 200 300 50 350 250 400 100 450 200 Bezier
+saveCanvas 5

@@ -44,7 +44,9 @@ if __name__ == '__main__':
                         for x, y in pixels:
                             canvas[y,x] = color
                     elif item_type == 'curve':
-                        pass
+                        pixels = alg.draw_curve(p_list, algorithm)
+                        for x, y in pixels:
+                            canvas[y,x] = color
                 Image.fromarray(canvas).save(os.path.join(output_dir, save_name + '.bmp'), 'bmp')
             elif line[0] == 'setColor':
                 pen_color[0] = int(line[1])
@@ -66,7 +68,7 @@ if __name__ == '__main__':
                     x0 = int(line[2+i*2])
                     y0 = int(line[2+i*2+1])
                     p_list.append([x0,y0])
-                    item_dict[item_id] = ['polygon', p_list, algorithm, np.array(pen_color)]
+                item_dict[item_id] = ['polygon', p_list, algorithm, np.array(pen_color)]
             elif line[0] == 'drawEllipse':
                 item_id = line[1]
                 x0 = int(line[2])
@@ -74,6 +76,20 @@ if __name__ == '__main__':
                 x1 = int(line[4])
                 y1 = int(line[5])
                 item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]],'middlecircle' ,np.array(pen_color)]
+            elif line[0] == 'drawCurve':
+                item_id = line[1]
+                algorithm = line[-1]
+                p_list = []
+                for i in range((len(line)-3)//2):
+                    x0 = int(line[2+i*2])
+                    y0 = int(line[2+i*2+1])
+                    p_list.append([x0,y0])
+                item_dict[item_id] = ['curve', p_list, algorithm, np.array(pen_color)]
+            elif line[0] == 'translate':
+                item_id = line[1]
+                dx = int(line[2])
+                dy = int(line[3])
+                item_dict[item_id][1] = alg.translate(item_dict[item_id][1],dx,dy)
             ...
 
             line = fp.readline()
