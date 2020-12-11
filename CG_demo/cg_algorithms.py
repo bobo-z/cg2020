@@ -96,6 +96,9 @@ def draw_polygon(p_list, algorithm):
         result += line
     return result
 
+# https://www.geogebra.org/
+# https://blog.csdn.net/orbit/article/details/7496008?utm_medium=distribute.pc_relevant.none-task-blog-title-2&spm=1001.2101.3001.4242
+
 
 def draw_ellipse(p_list):
     """绘制椭圆（采用中点圆生成算法）
@@ -175,14 +178,38 @@ def Bezier_Point(t, p_list):
             Qy = (1-t)*p_list[i][1] + t*p_list[i+1][1]
             new_list.append([Qx, Qy])
         p_list = new_list
-        new_list=[]
+        new_list = []
 
     x = int(p_list[0][0])
     y = int(p_list[0][1])
-    return x,y
+    return x, y
+
+
+def Basefunction(i, k, u):
+    """计算B样条曲线的基函数取值
+
+    :param i:(int)index of base function
+    :param k:(int)阶数 degree+1
+    :param u:parameter
+    :return:the value of base function
+    """
+    Nik_u = 0.0
+    if k == 1:
+        if u < i+1 and u >= i:
+            Nik_u = 1.0
+        else:
+            Nik_u = 0.0
+    else:
+        Nik_u = ((u-i)/(k-1))*Basefunction(i, k-1, u) + ((i+k-u)/(k-1))*Basefunction(i+1, k-1, u)
+
+    return Nik_u
 
 
 # https://github.com/torresjrjr/Bezier.py
+# https://en.wikipedia.org/wiki/B%C3%A9zier_curve
+# https://blog.csdn.net/xiaozhangcsdn/article/details/98963937
+
+
 def draw_curve(p_list, algorithm):
     """绘制曲线
 
@@ -192,14 +219,27 @@ def draw_curve(p_list, algorithm):
     """
     res = []
     if algorithm == "Bezier":
+        # 绘制贝塞尔曲线
         t_step = 0.0005
         t = 0
         while t <= 1:
             res.append(Bezier_Point(t, p_list))
             t = t + t_step
-    else:
-        pass
-
+    elif algorithm == "B-spline":
+        # 绘制3次均匀B样条曲线
+        k = 3
+        n = len(p_list)-1  # num of control points is n+1
+        u = k
+        step = 0.001
+        while u <= n+1:
+            p_x = 0.0
+            p_y = 0.0
+            for i in range(n+1):
+                Nik = Basefunction(i, k+1, u)
+                p_x = p_x+p_list[i][0]*Nik
+                p_y = p_y+p_list[i][1]*Nik 
+            u = u + step
+            res.append([int(p_x), int(p_y)])
     return res
 
 
