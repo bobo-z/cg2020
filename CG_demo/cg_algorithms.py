@@ -208,7 +208,7 @@ def Basefunction(i, k, u):
 # https://github.com/torresjrjr/Bezier.py
 # https://en.wikipedia.org/wiki/B%C3%A9zier_curve
 # https://blog.csdn.net/xiaozhangcsdn/article/details/98963937
-
+# https://www.cnblogs.com/nobodyzhou/p/5451528.html
 
 def draw_curve(p_list, algorithm):
     """绘制曲线
@@ -242,7 +242,7 @@ def draw_curve(p_list, algorithm):
             res.append([int(p_x), int(p_y)])
     return res
 
-
+# https://blog.csdn.net/a3631568/article/details/53637473
 def translate(p_list, dx, dy):
     """平移变换
 
@@ -266,7 +266,14 @@ def rotate(p_list, x, y, r):
     :param r: (int) 顺时针旋转角度（°）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    res=[]
+    r=math.radians(360-r)
+    for x0,y0 in p_list:
+        new_x = x+(x0-x)*math.cos(r)-(y0-y)*math.sin(r)
+        new_y = y+(x0-x)*math.sin(r)+(y0-y)*math.cos(r)
+        res.append([round(new_x),round(new_y)])
+    return res
+
 
 
 def scale(p_list, x, y, s):
@@ -278,7 +285,12 @@ def scale(p_list, x, y, s):
     :param s: (float) 缩放倍数
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    pass
+    res=[]
+    for x0,y0 in p_list:
+        new_x = x+(x0-x)*s
+        new_y = y+(y0-y)*s
+        res.append([round(new_x),round(new_y)])
+    return res
 
 
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
