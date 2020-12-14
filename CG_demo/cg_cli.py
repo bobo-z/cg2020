@@ -9,10 +9,10 @@ from PIL import Image
 
 
 if __name__ == '__main__':
-    #input_file = sys.argv[1]
-    #output_dir = sys.argv[2]
-    input_file = '/home/cg/cg2020a/CG_demo/input.txt'
-    output_dir = '/home/cg/cg2020a/CG_demo/output_dir'
+    input_file = sys.argv[1]
+    output_dir = sys.argv[2]
+    #input_file = '/home/cg/cg2020a/CG_demo/input.txt'
+    #output_dir = '/home/cg/cg2020a/CG_demo/output_dir'
     os.makedirs(output_dir, exist_ok=True)
 
     item_dict = {}
