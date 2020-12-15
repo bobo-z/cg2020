@@ -38,13 +38,15 @@ class MyCanvas(QGraphicsView):
         self.temp_item = None
 
         self.is_polygon_drawing = False
+        self.is_curve_drawing = False
 
     def status_change(self):
-        if self.is_polygon_drawing:
+        if self.is_polygon_drawing or self.is_curve_drawing:
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
             self.is_polygon_drawing = False
+            self.is_curve_drawing = False
 
     def start_draw_line(self, algorithm, item_id):
         self.status = 'line'
@@ -61,6 +63,12 @@ class MyCanvas(QGraphicsView):
     def start_draw_ellipse(self, item_id):
         self.status = 'ellipse'
         self.status_change()
+        self.temp_id = item_id
+    
+    def start_draw_curve(self, algorithm, item_id):
+        self.status = 'curve'
+        self.status_change()
+        self.temp_algorithm = algorithm
         self.temp_id = item_id
 
     def finish_draw(self):
@@ -104,6 +112,15 @@ class MyCanvas(QGraphicsView):
             self.temp_item = MyItem(self.temp_id, self.status, [
                                     [x, y], [x, y]], self.temp_algorithm)
             self.scene().addItem(self.temp_item)
+        
+        elif self.status == 'curve':
+            if not self.is_curve_drawing:
+                self.temp_item = MyItem(self.temp_id, self.status, [
+                                        [x, y], [x, y]], self.temp_algorithm)
+                self.scene().addItem(self.temp_item)
+                self.is_curve_drawing = True
+            else:
+                self.temp_item.p_list.append([x,y])
         self.updateScene([self.sceneRect()])
         super().mousePressEvent(event)
 
@@ -118,6 +135,8 @@ class MyCanvas(QGraphicsView):
             #print(self.temp_item.p_list)
         elif self.status == 'ellipse':
             self.temp_item.p_list[1] = [x, y]
+        elif self.status == 'curve':
+            self.temp_item.p_list[-1] = [x, y]
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -132,6 +151,8 @@ class MyCanvas(QGraphicsView):
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
             self.finish_draw()
+        elif self.status == 'curve':
+            pass
         super().mouseReleaseEvent(event)
 
 
@@ -279,6 +300,8 @@ class MainWindow(QMainWindow):
         polygon_dda_act.triggered.connect(self.polygon_dda_action)
         polygon_bresenham_act.triggered.connect(self.polygon_bresenham_action)
         ellipse_act.triggered.connect(self.ellipse_action)
+        curve_bezier_act.triggered.connect(self.curve_bezier_action)
+        curve_b_spline_act.triggered.connect(self.curve_b_spline_action)
         self.list_widget.currentTextChanged.connect(
             self.canvas_widget.selection_changed)
 
@@ -331,6 +354,18 @@ class MainWindow(QMainWindow):
     def ellipse_action(self):
         self.canvas_widget.start_draw_ellipse(self.get_id())
         self.statusBar().showMessage('绘制椭圆')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def curve_bezier_action(self):
+        self.canvas_widget.start_draw_curve('Bezier', self.get_id())
+        self.statusBar().showMessage('绘制Bezier曲线')
+        self.list_widget.clearSelection()
+        self.canvas_widget.clear_selection()
+
+    def curve_b_spline_action(self):
+        self.canvas_widget.start_draw_curve('B-spline', self.get_id())
+        self.statusBar().showMessage('绘制B-spline曲线')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
 
