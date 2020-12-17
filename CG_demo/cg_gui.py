@@ -20,9 +20,11 @@ from PyQt5.QtWidgets import (
     QPushButton,
     QSpinBox,
     QFormLayout,
-    QLabel)
+    QLabel,
+    QFileDialog,
+    )
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor, QWheelEvent
-from PyQt5.QtCore import QRectF, QTimer, Qt
+from PyQt5.QtCore import QRectF, Qt, QPoint
 import numpy as np
 
 
@@ -160,6 +162,8 @@ class MyCanvas(QGraphicsView):
                 self.init_x, self.init_y = x, y
             elif self.status == 'scale':
                 self.init_x, self.init_y = x, y
+            elif self.status == 'modify':#TODO
+                pass
         else:
             pass
 
@@ -182,6 +186,9 @@ class MyCanvas(QGraphicsView):
         elif self.status == 'translate':
             self.temp_item.p_list = alg.translate(
                 self.p_l, x - self.init_x, y - self.init_y)
+        elif self.status == 'modify':#TODO
+            pass
+
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
@@ -206,6 +213,8 @@ class MyCanvas(QGraphicsView):
             self.item_dict[self.selected_id] = self.temp_item
         elif self.status == 'scale':
             self.item_dict[self.selected_id] = self.temp_item
+        elif self.status == 'modify':#TODO
+            pass
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
@@ -262,32 +271,32 @@ class MyItem(QGraphicsItem):
         painter.setPen(self.color)
         if self.item_type == 'line':
             item_pixels = alg.draw_line(self.p_list, self.algorithm)
-            for p in item_pixels:
-                painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(255, 0, 0))
-                painter.drawRect(self.boundingRect())
         elif self.item_type == 'polygon':
             item_pixels = alg.draw_polygon_gui(self.p_list, self.algorithm)
-            for p in item_pixels:
-                painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(0, 255, 0))
-                painter.drawRect(self.boundingRect())
         elif self.item_type == 'ellipse':
             item_pixels = alg.draw_ellipse(self.p_list)
-            for p in item_pixels:
-                painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(0, 0, 255))
-                painter.drawRect(self.boundingRect())
         elif self.item_type == 'curve':
             item_pixels = alg.draw_curve(self.p_list, self.algorithm)
-            for p in item_pixels:
-                painter.drawPoint(*p)
-            if self.selected:
-                painter.setPen(QColor(0, 0, 255))
-                painter.drawRect(self.boundingRect())
+
+        for p in item_pixels:
+            painter.drawPoint(*p)
+        if self.selected:
+            painter.setPen(QColor(0, 0, 255))
+            painter.drawRect(self.boundingRect())
+            for x in self.p_list:
+                painter.setPen(QColor(0, 0, 0))
+                point_range = 2
+                i=1
+                for i in range(point_range+1):
+                    painter.drawPoint(x[0]-i,x[1])
+                    painter.drawPoint(x[0]+i,x[1])
+                    painter.drawPoint(x[0],x[1]-i)
+                    painter.drawPoint(x[0],x[1]+i)
+                    painter.drawPoint(x[0]-i,x[1]-i)
+                    painter.drawPoint(x[0]+i,x[1]+i)
+                    painter.drawPoint(x[0]+i,x[1]-1)
+                    painter.drawPoint(x[0]-i,x[1]+1)
+                painter.drawPoint(*x)
 
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line':
@@ -345,7 +354,7 @@ class MainWindow(QMainWindow):
         self.scene.setSceneRect(0, 0, 600,600)
         self.scene_color = QColor(255, 255, 255)
         self.canvas_widget = MyCanvas(self.scene, self)
-        self.canvas_widget.setFixedSize(600, 600)
+        self.canvas_widget.setFixedSize(605, 605)
         self.canvas_widget.main_window = self
         self.canvas_widget.list_widget = self.list_widget
 
@@ -354,6 +363,7 @@ class MainWindow(QMainWindow):
         file_menu = menubar.addMenu('文件')
         set_pen_act = file_menu.addAction('设置画笔')
         reset_canvas_act = file_menu.addAction('重置画布')
+        save_canvas_act = file_menu.addAction('保存画布')
         exit_act = file_menu.addAction('退出')
         draw_menu = menubar.addMenu('绘制')
         line_menu = draw_menu.addMenu('线段')
@@ -378,6 +388,7 @@ class MainWindow(QMainWindow):
         # 连接信号和槽函数
         set_pen_act.triggered.connect(self.set_pen_action)
         reset_canvas_act.triggered.connect(self.reset_canvas_action)
+        save_canvas_act.triggered.connect(self.save_canvas_action)
         exit_act.triggered.connect(qApp.quit)
         line_naive_act.triggered.connect(self.line_naive_action)
         line_dda_act.triggered.connect(self.line_dda_action)
@@ -420,7 +431,7 @@ class MainWindow(QMainWindow):
     def reset_canvas_action(self):
         self.statusBar().showMessage('重置画布')
         dialog = QDialog()
-        dialog.setWindowTitle('设置画布大小')
+        dialog.setWindowTitle('重置画布信息')
         dialog.setWindowModality(Qt.WindowModal)
         dialog.resize(300,300)
 
@@ -455,7 +466,7 @@ class MainWindow(QMainWindow):
         if res == 1:
             width = width_box.value()
             height = height_box.value()
-            self.canvas_widget.resize(width, height)
+            self.canvas_widget.resize(width+5, height+5)
             self.scene.setSceneRect(0, 0, width,height)#both scene and canvas should be changed
             self.scene.setBackgroundBrush(self.scene_color)
             self.canvas_widget.setFixedSize(width, height)
@@ -464,6 +475,15 @@ class MainWindow(QMainWindow):
             self.scene.clear()
             self.list_widget.clear()
             self.item_cnt = 1
+
+    def save_canvas_action(self):
+        self.statusBar().showMessage('保存画布')
+        filename = QFileDialog.getSaveFileName(self, '保存画布','./','Images (*.png *.bmp *.jpg)')
+        if filename[0]:
+            pix = self.canvas_widget.grab(self.canvas_widget.sceneRect().toRect())
+            pix.save(filename[0])
+            
+
 
     def line_naive_action(self):
         self.item_cnt -= 1
