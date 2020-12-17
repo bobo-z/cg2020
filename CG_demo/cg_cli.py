@@ -38,18 +38,19 @@ if __name__ == '__main__':
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'polygon':
-                        pixels = alg.draw_polygon(p_list, algorithm)
+                        pixels = alg.draw_polygon_gui(p_list, algorithm)
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'ellipse':
                         pixels = alg.draw_ellipse(p_list)
                         for x, y in pixels:
-                            canvas[y,x] = color
+                            canvas[y, x] = color
                     elif item_type == 'curve':
                         pixels = alg.draw_curve(p_list, algorithm)
                         for x, y in pixels:
-                            canvas[y,x] = color
-                Image.fromarray(canvas).save(os.path.join(output_dir, save_name + '.bmp'), 'bmp')
+                            canvas[y, x] = color
+                Image.fromarray(canvas).save(os.path.join(
+                    output_dir, save_name + '.bmp'), 'bmp')
             elif line[0] == 'setColor':
                 pen_color[0] = int(line[1])
                 pen_color[1] = int(line[2])
@@ -61,50 +62,56 @@ if __name__ == '__main__':
                 x1 = int(line[4])
                 y1 = int(line[5])
                 algorithm = line[6]
-                item_dict[item_id] = ['line', [[x0, y0], [x1, y1]], algorithm, np.array(pen_color)]
+                item_dict[item_id] = ['line', [[x0, y0], [x1, y1]],
+                                      algorithm, np.array(pen_color)]
             elif line[0] == 'drawPolygon':
                 item_id = line[1]
                 algorithm = line[-1]
                 p_list = []
-                for i in range((len(line)-3)//2):
-                    x0 = int(line[2+i*2])
-                    y0 = int(line[2+i*2+1])
-                    p_list.append([x0,y0])
-                item_dict[item_id] = ['polygon', p_list, algorithm, np.array(pen_color)]
+                for i in range((len(line) - 3) // 2):
+                    x0 = int(line[2 + i * 2])
+                    y0 = int(line[2 + i * 2 + 1])
+                    p_list.append([x0, y0])
+                item_dict[item_id] = [
+                    'polygon', p_list, algorithm, np.array(pen_color)]
             elif line[0] == 'drawEllipse':
                 item_id = line[1]
                 x0 = int(line[2])
                 y0 = int(line[3])
                 x1 = int(line[4])
                 y1 = int(line[5])
-                item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]],'middlecircle' ,np.array(pen_color)]
+                item_dict[item_id] = ['ellipse', [[x0, y0], [x1, y1]],
+                                      'middlecircle', np.array(pen_color)]
             elif line[0] == 'drawCurve':
                 item_id = line[1]
                 algorithm = line[-1]
                 p_list = []
-                for i in range((len(line)-3)//2):
-                    x0 = int(line[2+i*2])
-                    y0 = int(line[2+i*2+1])
-                    p_list.append([x0,y0])
-                item_dict[item_id] = ['curve', p_list, algorithm, np.array(pen_color)]
+                for i in range((len(line) - 3) // 2):
+                    x0 = int(line[2 + i * 2])
+                    y0 = int(line[2 + i * 2 + 1])
+                    p_list.append([x0, y0])
+                item_dict[item_id] = [
+                    'curve', p_list, algorithm, np.array(pen_color)]
             elif line[0] == 'translate':
                 item_id = line[1]
                 dx = int(line[2])
                 dy = int(line[3])
-                item_dict[item_id][1] = alg.translate(item_dict[item_id][1],dx,dy)
+                item_dict[item_id][1] = alg.translate(
+                    item_dict[item_id][1], dx, dy)
             elif line[0] == 'rotate':
                 item_id = line[1]
                 x = int(line[2])
                 y = int(line[3])
                 r = int(line[4])
-                item_dict[item_id][1] = alg.rotate(item_dict[item_id][1],x,y,r)
+                item_dict[item_id][1] = alg.rotate(
+                    item_dict[item_id][1], x, y, r)
             elif line[0] == 'scale':
                 item_id = line[1]
                 x = int(line[2])
                 y = int(line[3])
                 s = float(line[4])
-                item_dict[item_id][1] = alg.scale(item_dict[item_id][1],x,y,s)
+                item_dict[item_id][1] = alg.scale(
+                    item_dict[item_id][1], x, y, s)
             ...
 
             line = fp.readline()
-

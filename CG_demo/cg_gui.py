@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
     QStyleOptionGraphicsItem,
     QColorDialog)
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor, QWheelEvent
-from PyQt5.QtCore import QRectF
+from PyQt5.QtCore import QRectF, QTimer, Qt
 import numpy as np
 
 
@@ -40,12 +40,17 @@ class MyCanvas(QGraphicsView):
 
         self.is_polygon_drawing = False
         self.is_curve_drawing = False
+        self.is_line_drawing = False
+        self.is_ellipse_drawing = False
         self.init_x = 0
         self.init_y = 0
         self.p_l = []
         self.color = QColor(0, 0, 0)
 
     def status_change(self):
+        if self.is_polygon_drawing:
+            self.temp_item.p_list.append(self.temp_item.p_list[0])
+            self.updateScene([self.sceneRect()])
         if self.is_polygon_drawing or self.is_curve_drawing:
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
@@ -59,41 +64,34 @@ class MyCanvas(QGraphicsView):
 
     def start_draw_line(self, algorithm, item_id):
         self.status = 'line'
-        self.status_change()
         self.temp_algorithm = algorithm
         self.temp_id = item_id
 
     def start_draw_polygon(self, algorithm, item_id):
         self.status = 'polygon'
         self.temp_algorithm = algorithm
-        self.status_change()
         self.temp_id = item_id
-    
+
     def start_draw_ellipse(self, item_id):
         self.status = 'ellipse'
-        self.status_change()
         self.temp_id = item_id
-    
+
     def start_draw_curve(self, algorithm, item_id):
         self.status = 'curve'
-        self.status_change()
         self.temp_algorithm = algorithm
         self.temp_id = item_id
-    
+
     def start_translate(self):
         self.status = 'translate'
-        self.status_change()
-        self.temp_item =  self.item_dict[self.selected_id]
+        self.temp_item = self.item_dict[self.selected_id]
         self.p_l = self.temp_item.p_list
 
     def start_rotate(self):
         self.status = 'rotate'
-        self.status_change()
         self.temp_item = self.item_dict[self.selected_id]
 
     def start_scale(self):
         self.status = 'scale'
-        self.status_change()
         self.temp_item = self.item_dict[self.selected_id]
 
     def finish_draw(self):
@@ -116,72 +114,83 @@ class MyCanvas(QGraphicsView):
         self.updateScene([self.sceneRect()])
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        # self.timer.start(1000)
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
-        if self.status == 'line':
-            self.temp_item = MyItem(self.temp_id, self.status, [
-                                    [x, y], [x, y]], self.temp_algorithm, self.color)
-            self.scene().addItem(self.temp_item)
+        if event.button() == Qt.RightButton:
+            self.status_change()
+        elif event.button() == Qt.LeftButton:
+            if self.status == 'line':
+                self.temp_item = MyItem(self.temp_id, self.status, [
+                                        [x, y], [x, y]], self.temp_algorithm, self.color)
+                self.scene().addItem(self.temp_item)
+                self.is_line_drawing = True
 
-        elif self.status == 'polygon':
-            if not self.is_polygon_drawing:
+            elif self.status == 'polygon':
+                if not self.is_polygon_drawing:
+                    self.temp_item = MyItem(self.temp_id, self.status, [
+                                            [x, y], [x, y]], self.temp_algorithm, self.color)
+                    self.scene().addItem(self.temp_item)
+                    self.is_polygon_drawing = True
+                else:
+                    self.temp_item.p_list.append([x, y])
+            elif self.status == 'ellipse':
                 self.temp_item = MyItem(self.temp_id, self.status, [
                                         [x, y], [x, y]], self.temp_algorithm, self.color)
                 self.scene().addItem(self.temp_item)
-                self.is_polygon_drawing = True
-            else:
-                self.temp_item.p_list.append([x,y])
-        elif self.status == 'ellipse':
-            self.temp_item = MyItem(self.temp_id, self.status, [
-                                    [x, y], [x, y]], self.temp_algorithm, self.color)
-            self.scene().addItem(self.temp_item)
-        
-        elif self.status == 'curve':
-            if not self.is_curve_drawing:
-                self.temp_item = MyItem(self.temp_id, self.status, [
-                                        [x, y], [x, y]], self.temp_algorithm, self.color)
-                self.scene().addItem(self.temp_item)
-                self.is_curve_drawing = True
-            else:
-                self.temp_item.p_list.append([x,y])
-        elif self.status == 'translate':
-            self.init_x, self.init_y = x, y
-        elif self.status == 'rotate':
-            self.init_x, self.init_y = x ,y
-        elif self.status == 'scale':
-            self.init_x, self.init_y = x ,y
+                self.is_ellipse_drawing = True
+
+            elif self.status == 'curve':
+                if not self.is_curve_drawing:
+                    self.temp_item = MyItem(self.temp_id, self.status, [
+                                            [x, y], [x, y]], self.temp_algorithm, self.color)
+                    self.scene().addItem(self.temp_item)
+                    self.is_curve_drawing = True
+                else:
+                    self.temp_item.p_list.append([x, y])
+            elif self.status == 'translate':
+                self.init_x, self.init_y = x, y
+            elif self.status == 'rotate':
+                self.init_x, self.init_y = x, y
+            elif self.status == 'scale':
+                self.init_x, self.init_y = x, y
+        elif event.button() == Qt.MidButton:
+            print(self.is_polygon_drawing)
         self.updateScene([self.sceneRect()])
-        super().mousePressEvent(event)
+        # super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
-        if self.status == 'line':
+        if self.status == 'line' and self.is_line_drawing:
             self.temp_item.p_list[1] = [x, y]
-        elif self.status == 'polygon':
+        elif self.status == 'polygon' and self.is_polygon_drawing:
             self.temp_item.p_list[-1] = [x, y]
-            #print(self.temp_item.p_list)
-        elif self.status == 'ellipse':
+            # print(self.temp_item.p_list)
+        elif self.status == 'ellipse' and self.is_ellipse_drawing:
             self.temp_item.p_list[1] = [x, y]
-        elif self.status == 'curve':
+        elif self.status == 'curve' and self.is_curve_drawing:
             self.temp_item.p_list[-1] = [x, y]
         elif self.status == 'translate':
-            self.temp_item.p_list = alg.translate(self.p_l, x-self.init_x, y-self.init_y)
+            self.temp_item.p_list = alg.translate(
+                self.p_l, x - self.init_x, y - self.init_y)
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        if self.status == 'line':
+        if self.status == 'line' and self.is_line_drawing:
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
+            self.is_line_drawing = False
             self.finish_draw()
         elif self.status == 'polygon':
             pass
-        elif self.status == 'ellipse':
+        elif self.status == 'ellipse' and self.is_ellipse_drawing:
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
+            self.is_ellipse_drawing = False
             self.finish_draw()
         elif self.status == 'curve':
             pass
@@ -198,13 +207,13 @@ class MyCanvas(QGraphicsView):
         angle /= 60
 
         if self.status == 'rotate':
-            self.temp_item.p_list = alg.rotate(self.temp_item.p_list, self.init_x, self.init_y, angle.y())
+            self.temp_item.p_list = alg.rotate(
+                self.temp_item.p_list, self.init_x, self.init_y, angle.y())
         elif self.status == 'scale':
-            s = 1+0.1*angle.y()/2
-            self.temp_item.p_list = alg.scale(self.temp_item.p_list, self.init_x, self.init_y, s)
+            s = 1 + 0.1 * angle.y() / 2
+            self.temp_item.p_list = alg.scale(
+                self.temp_item.p_list, self.init_x, self.init_y, s)
         self.updateScene([self.sceneRect()])
-
-
 
 
 class MyItem(QGraphicsItem):
@@ -212,7 +221,17 @@ class MyItem(QGraphicsItem):
     自定义图元类，继承自QGraphicsItem
     """
 
-    def __init__(self, item_id: str, item_type: str, p_list: list, algorithm: str = '', color: QColor = QColor(0,0,0),parent: QGraphicsItem = None):
+    def __init__(
+            self,
+            item_id: str,
+            item_type: str,
+            p_list: list,
+            algorithm: str = '',
+            color: QColor = QColor(
+                0,
+                0,
+                0),
+            parent: QGraphicsItem = None):
         """
 
         :param item_id: 图元ID
@@ -229,7 +248,11 @@ class MyItem(QGraphicsItem):
         self.selected = False
         self.color = color
 
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: Optional[QWidget] = ...) -> None:
+    def paint(
+            self,
+            painter: QPainter,
+            option: QStyleOptionGraphicsItem,
+            widget: Optional[QWidget] = ...) -> None:
         painter.setPen(self.color)
         if self.item_type == 'line':
             item_pixels = alg.draw_line(self.p_list, self.algorithm)
@@ -239,7 +262,7 @@ class MyItem(QGraphicsItem):
                 painter.setPen(QColor(255, 0, 0))
                 painter.drawRect(self.boundingRect())
         elif self.item_type == 'polygon':
-            item_pixels = alg.draw_polygon(self.p_list, self.algorithm)
+            item_pixels = alg.draw_polygon_gui(self.p_list, self.algorithm)
             for p in item_pixels:
                 painter.drawPoint(*p)
             if self.selected:
@@ -418,14 +441,14 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage('DDA算法绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
-    
+
     def polygon_bresenham_action(self):
         self.item_cnt -= 1
         self.canvas_widget.start_draw_polygon('Bresenham', self.get_id())
         self.statusBar().showMessage('Bresenham算法绘制多边形')
         self.list_widget.clearSelection()
         self.canvas_widget.clear_selection()
-    
+
     def ellipse_action(self):
         self.item_cnt -= 1
         self.canvas_widget.start_draw_ellipse(self.get_id())
@@ -458,7 +481,7 @@ class MainWindow(QMainWindow):
             if item_type != 'ellipse':
                 self.canvas_widget.start_rotate()
                 self.statusBar().showMessage('旋转图元')
-    
+
     def scale_action(self):
         if self.canvas_widget.selected_id:
             self.canvas_widget.start_scale()

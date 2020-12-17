@@ -26,12 +26,12 @@ def draw_line(p_list, algorithm):
             for x in range(x0, x1 + 1):
                 result.append((x, int(y0 + k * (x - x0))))
     elif algorithm == 'DDA':
-        length = max(abs(x1-x0), abs(y1-y0))
+        length = max(abs(x1 - x0), abs(y1 - y0))
         if length == 0:
             delta_x = delta_y = 0
         else:
-            delta_x = (x1-x0)/length
-            delta_y = (y1-y0)/length
+            delta_x = (x1 - x0) / length
+            delta_y = (y1 - y0) / length
 
         x = x0 + 0.5
         y = y0 + 0.5
@@ -45,8 +45,8 @@ def draw_line(p_list, algorithm):
 
     elif algorithm == 'Bresenham':
         flag = False
-        delta_x = abs(x1-x0)
-        delta_y = abs(y1-y0)
+        delta_x = abs(x1 - x0)
+        delta_y = abs(y1 - y0)
         result.append((x0, y0))
         if delta_x == 0 and delta_y == 0:  # only a dot
             return result
@@ -67,12 +67,12 @@ def draw_line(p_list, algorithm):
 
         x = x0
         y = y0
-        e = 2*delta_y-delta_x
+        e = 2 * delta_y - delta_x
         while x != x1:
             if e < 0:  # right
-                e = e + 2*delta_y
+                e = e + 2 * delta_y
             else:  # top_right
-                e = e + 2*delta_y - 2*delta_x
+                e = e + 2 * delta_y - 2 * delta_x
                 y = y + ty
             x = x + tx
             if flag:
@@ -96,6 +96,20 @@ def draw_polygon(p_list, algorithm):
         result += line
     return result
 
+
+def draw_polygon_gui(p_list, algorithm):
+    """绘制多边形 in gui
+
+    :param p_list: (list of list of int: [[x0, y0], [x1, y1], [x2, y2], ...]) 多边形的顶点坐标列表
+    :param algorithm: (string) 绘制使用的算法，包括'DDA'和'Bresenham'
+    :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
+    """
+    result = []
+    for i in range(len(p_list) - 1):
+        line = draw_line([p_list[i], p_list[i + 1]], algorithm)
+        result += line
+    return result
+
 # https://www.geogebra.org/
 # https://blog.csdn.net/orbit/article/details/7496008?utm_medium=distribute.pc_relevant.none-task-blog-title-2&spm=1001.2101.3001.4242
 
@@ -108,58 +122,59 @@ def draw_ellipse(p_list):
     """
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
-    xc = (x0+x1)//2
-    yc = (y0+y1)//2  # the center of ellipse
-    rx = abs((x1-x0))//2
-    ry = abs((y1-y0))//2
+    xc = (x0 + x1) // 2
+    yc = (y0 + y1) // 2  # the center of ellipse
+    rx = abs((x1 - x0)) // 2
+    ry = abs((y1 - y0)) // 2
     flag = False  # 焦点是否在y轴上
     if rx < ry:
         rx, ry = ry, rx
         flag = True
     x = 0
     y = ry
-    ry_sq = ry*ry
-    rx_sq = rx*rx
-    p1 = ry_sq-rx_sq*ry+rx_sq/4
+    ry_sq = ry * ry
+    rx_sq = rx * rx
+    p1 = ry_sq - rx_sq * ry + rx_sq / 4
     res = []
-    while ry_sq*x < rx_sq*y:
+    while ry_sq * x < rx_sq * y:
         # section 1
         if flag:
             xk, yk = y, x
         else:
             xk, yk = x, y
-        res.extend([(xk+xc, yk+yc), (xc-xk, yk+yc),
-                    (xk+xc, yc-yk), (xc-xk, yc-yk)])
+        res.extend([(xk + xc, yk + yc), (xc - xk, yk + yc),
+                    (xk + xc, yc - yk), (xc - xk, yc - yk)])
 
         if p1 < 0:
-            p1 = p1 + 2*ry_sq*x+3*ry_sq
+            p1 = p1 + 2 * ry_sq * x + 3 * ry_sq
             x = x + 1
         else:
-            p1 = p1 + 2*ry_sq*x - 2*rx_sq*y+2*rx_sq+3*ry_sq
+            p1 = p1 + 2 * ry_sq * x - 2 * rx_sq * y + 2 * rx_sq + 3 * ry_sq
             x = x + 1
-            y = y-1
+            y = y - 1
 
-    p2 = ry_sq*(x+0.5)*(x+0.5)+rx_sq*(y-1)*(y-1)-rx_sq*ry_sq
+    p2 = ry_sq * (x + 0.5) * (x + 0.5) + rx_sq * \
+        (y - 1) * (y - 1) - rx_sq * ry_sq
     while y > 0:
         # section 2
         if flag:
             xk, yk = y, x
         else:
             xk, yk = x, y
-        res.extend([(xk+xc, yk+yc), (xc-xk, yk+yc),
-                    (xk+xc, yc-yk), (xc-xk, yc-yk)])
+        res.extend([(xk + xc, yk + yc), (xc - xk, yk + yc),
+                    (xk + xc, yc - yk), (xc - xk, yc - yk)])
         if p2 >= 0:
-            p2 = p2-2*rx_sq*y+3*rx_sq
-            y = y-1
+            p2 = p2 - 2 * rx_sq * y + 3 * rx_sq
+            y = y - 1
         else:
-            p2 = p2+2*ry_sq*x-2*rx_sq*y+2*ry_sq+3*rx_sq
-            x = x+1
-            y = y-1
+            p2 = p2 + 2 * ry_sq * x - 2 * rx_sq * y + 2 * ry_sq + 3 * rx_sq
+            x = x + 1
+            y = y - 1
 
     if flag:
-        res.extend([(xc, rx+yc), (xc, yc-rx)])
+        res.extend([(xc, rx + yc), (xc, yc - rx)])
     else:
-        res.extend([(rx+xc, yc), (xc-rx, yc)])
+        res.extend([(rx + xc, yc), (xc - rx, yc)])
     return res
 
 
@@ -172,10 +187,10 @@ def Bezier_Point(t, p_list):
     """
     new_list = []
     while (len(p_list) > 1):
-        for i in range(0, len(p_list)-1):
+        for i in range(0, len(p_list) - 1):
             # Q is a point between p_list[i] and p_list[i+1], parametised by t.
-            Qx = (1-t)*p_list[i][0] + t*p_list[i+1][0]
-            Qy = (1-t)*p_list[i][1] + t*p_list[i+1][1]
+            Qx = (1 - t) * p_list[i][0] + t * p_list[i + 1][0]
+            Qy = (1 - t) * p_list[i][1] + t * p_list[i + 1][1]
             new_list.append([Qx, Qy])
         p_list = new_list
         new_list = []
@@ -195,12 +210,13 @@ def Basefunction(i, k, u):
     """
     Nik_u = 0.0
     if k == 1:
-        if u < i+1 and u >= i:
+        if u < i + 1 and u >= i:
             Nik_u = 1.0
         else:
             Nik_u = 0.0
     else:
-        Nik_u = ((u-i)/(k-1))*Basefunction(i, k-1, u) + ((i+k-u)/(k-1))*Basefunction(i+1, k-1, u)
+        Nik_u = ((u - i) / (k - 1)) * Basefunction(i, k - 1, u) + \
+            ((i + k - u) / (k - 1)) * Basefunction(i + 1, k - 1, u)
 
     return Nik_u
 
@@ -228,21 +244,23 @@ def draw_curve(p_list, algorithm):
     elif algorithm == "B-spline":
         # 绘制3次均匀B样条曲线
         k = 3
-        n = len(p_list)-1  # num of control points is n+1
+        n = len(p_list) - 1  # num of control points is n+1
         u = k
         step = 0.001
-        while u <= n+1:
+        while u <= n + 1:
             p_x = 0.0
             p_y = 0.0
-            for i in range(n+1):
-                Nik = Basefunction(i, k+1, u)
-                p_x = p_x+p_list[i][0]*Nik
-                p_y = p_y+p_list[i][1]*Nik 
+            for i in range(n + 1):
+                Nik = Basefunction(i, k + 1, u)
+                p_x = p_x + p_list[i][0] * Nik
+                p_y = p_y + p_list[i][1] * Nik
             u = u + step
             res.append([int(p_x), int(p_y)])
     return res
 
 # https://blog.csdn.net/a3631568/article/details/53637473
+
+
 def translate(p_list, dx, dy):
     """平移变换
 
@@ -253,7 +271,7 @@ def translate(p_list, dx, dy):
     """
     res = []
     for x, y in p_list:
-        res.append((x+dx, y+dy))
+        res.append((x + dx, y + dy))
     return res
 
 
@@ -266,14 +284,13 @@ def rotate(p_list, x, y, r):
     :param r: (int) 顺时针旋转角度（°）
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    res=[]
-    r=math.radians(360-r)
-    for x0,y0 in p_list:
-        new_x = x+(x0-x)*math.cos(r)-(y0-y)*math.sin(r)
-        new_y = y+(x0-x)*math.sin(r)+(y0-y)*math.cos(r)
-        res.append([round(new_x),round(new_y)])
+    res = []
+    r = math.radians(360 - r)
+    for x0, y0 in p_list:
+        new_x = x + (x0 - x) * math.cos(r) - (y0 - y) * math.sin(r)
+        new_y = y + (x0 - x) * math.sin(r) + (y0 - y) * math.cos(r)
+        res.append([round(new_x), round(new_y)])
     return res
-
 
 
 def scale(p_list, x, y, s):
@@ -285,11 +302,11 @@ def scale(p_list, x, y, s):
     :param s: (float) 缩放倍数
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
-    res=[]
-    for x0,y0 in p_list:
-        new_x = x+(x0-x)*s
-        new_y = y+(y0-y)*s
-        res.append([round(new_x),round(new_y)])
+    res = []
+    for x0, y0 in p_list:
+        new_x = x + (x0 - x) * s
+        new_y = y + (y0 - y) * s
+        res.append([round(new_x), round(new_y)])
     return res
 
 
