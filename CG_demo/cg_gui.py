@@ -15,11 +15,18 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QWidget,
     QStyleOptionGraphicsItem,
-    QColorDialog)
+    QColorDialog,
+    QDialog,
+    QPushButton,
+    QSpinBox,
+    QFormLayout,
+    QLabel)
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor, QWheelEvent
 from PyQt5.QtCore import QRectF, QTimer, Qt
 import numpy as np
 
+
+#https://mp.weixin.qq.com/s/Wy1iTYoX7_O81ChMflXXfg
 
 class MyCanvas(QGraphicsView):
     """
@@ -126,7 +133,6 @@ class MyCanvas(QGraphicsView):
                                         [x, y], [x, y]], self.temp_algorithm, self.color)
                 self.scene().addItem(self.temp_item)
                 self.is_line_drawing = True
-
             elif self.status == 'polygon':
                 if not self.is_polygon_drawing:
                     self.temp_item = MyItem(self.temp_id, self.status, [
@@ -140,7 +146,6 @@ class MyCanvas(QGraphicsView):
                                         [x, y], [x, y]], self.temp_algorithm, self.color)
                 self.scene().addItem(self.temp_item)
                 self.is_ellipse_drawing = True
-
             elif self.status == 'curve':
                 if not self.is_curve_drawing:
                     self.temp_item = MyItem(self.temp_id, self.status, [
@@ -155,8 +160,9 @@ class MyCanvas(QGraphicsView):
                 self.init_x, self.init_y = x, y
             elif self.status == 'scale':
                 self.init_x, self.init_y = x, y
-        elif event.button() == Qt.MidButton:
-            print(self.is_polygon_drawing)
+        else:
+            pass
+
         self.updateScene([self.sceneRect()])
         # super().mousePressEvent(event)
 
@@ -336,7 +342,8 @@ class MainWindow(QMainWindow):
 
         # 使用QGraphicsView作为画布
         self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(0, 0, 600, 600)
+        self.scene.setSceneRect(0, 0, 600,600)
+        self.scene_color = QColor(255, 255, 255)
         self.canvas_widget = MyCanvas(self.scene, self)
         self.canvas_widget.setFixedSize(600, 600)
         self.canvas_widget.main_window = self
@@ -407,12 +414,56 @@ class MainWindow(QMainWindow):
         color = QColorDialog.getColor()
         self.canvas_widget.start_set_pen(color)
 
+    def set_scene_color(self):
+        self.scene_color = QColorDialog.getColor()
+
     def reset_canvas_action(self):
-        self.list_widget.clearSelection()
-        self.canvas_widget.clear_selection()
-        self.scene.clear()
-        self.list_widget.clear()
-        self.item_cnt = 1
+        self.statusBar().showMessage('重置画布')
+        dialog = QDialog()
+        dialog.setWindowTitle('设置画布大小')
+        dialog.setWindowModality(Qt.WindowModal)
+        dialog.resize(300,300)
+
+        btn1 = QPushButton(dialog)
+        btn1.setText('确定')
+        btn1.move(175, 250)
+        btn1.clicked.connect(lambda: dialog.accept())
+
+        btn2 = QPushButton(dialog)
+        btn2.setText('取消')
+        btn2.move(50, 250)
+        btn2.clicked.connect(lambda: dialog.reject())
+
+        width_box = QSpinBox()
+        width_box.setRange(100, 1100)
+        width_box.setValue(600)
+
+        height_box = QSpinBox()
+        height_box.setRange(100, 1100)
+        height_box.setValue(600)
+
+        color_btn = QPushButton('画布颜色', dialog)
+        color_btn.clicked.connect(self.set_scene_color)
+
+
+        formlayout = QFormLayout(dialog)
+        formlayout.addRow(QLabel('宽'),width_box)
+        formlayout.addRow(QLabel('高'),height_box)
+        formlayout.addRow(color_btn)
+
+        res = dialog.exec()
+        if res == 1:
+            width = width_box.value()
+            height = height_box.value()
+            self.canvas_widget.resize(width, height)
+            self.scene.setSceneRect(0, 0, width,height)#both scene and canvas should be changed
+            self.scene.setBackgroundBrush(self.scene_color)
+            self.canvas_widget.setFixedSize(width, height)
+            self.list_widget.clearSelection()
+            self.canvas_widget.clear_selection()
+            self.scene.clear()
+            self.list_widget.clear()
+            self.item_cnt = 1
 
     def line_naive_action(self):
         self.item_cnt -= 1
@@ -493,3 +544,4 @@ if __name__ == '__main__':
     mw = MainWindow()
     mw.show()
     sys.exit(app.exec_())
+
