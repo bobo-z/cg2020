@@ -12,6 +12,8 @@ def draw_line(p_list, algorithm):
     :param algorithm: (string) 绘制使用的算法，包括'DDA'和'Bresenham'，此处的'Naive'仅作为示例，测试时不会出现
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 绘制结果的像素点坐标列表
     """
+    if len(p_list) != 2:
+        return []
     x0, y0 = p_list[0]
     x1, y1 = p_list[1]
     result = []
@@ -285,7 +287,7 @@ def rotate(p_list, x, y, r):
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1], [x_2, y_2], ...]) 变换后的图元参数
     """
     res = []
-    r = math.radians(360 - r)
+    r = math.radians(360 + r)
     for x0, y0 in p_list:
         new_x = x + (x0 - x) * math.cos(r) - (y0 - y) * math.sin(r)
         new_y = y + (x0 - x) * math.sin(r) + (y0 - y) * math.cos(r)
@@ -310,6 +312,25 @@ def scale(p_list, x, y, s):
     return res
 
 
+def encode(x_min, y_min, x_max, y_max, x, y):
+    LEFT   = 0b0001
+    RIGHT  = 0b0010
+    BOTTOM = 0b0100
+    TOP    = 0b1000
+    code   = 0
+    if x < x_min:
+        code += LEFT
+    elif x > x_max:
+        code += RIGHT
+    if y > y_max:
+        code += BOTTOM
+    elif y < y_min:
+        code += TOP
+    return code
+# https://www.cnblogs.com/cnblog-wuran/p/9813841.html
+# https://www.cnblogs.com/iamfatotaku/p/12496937.html
+
+
 def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     """线段裁剪
 
@@ -321,4 +342,71 @@ def clip(p_list, x_min, y_min, x_max, y_max, algorithm):
     :param algorithm: (string) 使用的裁剪算法，包括'Cohen-Sutherland'和'Liang-Barsky'
     :return: (list of list of int: [[x_0, y_0], [x_1, y_1]]) 裁剪后线段的起点和终点坐标
     """
-    pass
+    if len(p_list) != 2:
+        return []
+    x0, y0 = p_list[0]
+    x1, y1 = p_list[1]
+    res = []
+    if algorithm == 'Cohen-Sutherland':
+        LEFT   = 0b0001
+        RIGHT  = 0b0010
+        BOTTOM = 0b0100
+        TOP    = 0b1000
+        code   = [0, 0]
+        code[0] = encode(x_min, y_min, x_max, y_max, x0, y0)
+        code[1] = encode(x_min, y_min, x_max, y_max, x1, y1)
+        res = p_list
+        while code[0] | code[1] != 0:
+            if code[0] & code[1] != 0:
+                return []  # empty
+            for i in range(2):
+                x, y = res[i]
+                if code[i] == 0:
+                    continue
+                else:
+                    if LEFT & code[i] != 0:
+                        x = x_min
+                        if x0 == x1:
+                            y = y0
+                        else:
+                            y = y0 + (y1 - y0) * (x_min - x0) / (x1 - x0)
+                    elif RIGHT & code[i] != 0:
+                        x = x_max
+                        if x0 == x1:
+                            y = y0
+                        else:
+                            y = y0 + (y1 - y0) * (x_max - x0) / (x1 - x0)
+                    elif BOTTOM & code[i] != 0:
+                        y = y_max
+                        x = x0 + (x1 - x0) * (y_max - y0) / (y1 - y0)
+                    elif TOP & code[i] != 0:
+                        y = y_min
+                        x = x0 + (x1 - x0) * (y_min - y0) / (y1 - y0)
+                    code[i] = encode(x_min, y_min, x_max, y_max, x, y)
+                    res[i] = [int(x), int(y)]
+
+    elif algorithm == 'Liang-Barsky':
+        dx = x1 - x0
+        dy = y1 - y0
+        p = [-dx, dx, -dy, dy]
+        q = [x0 - x_min, x_max - x0, y0 - y_min, y_max - y0]
+        u0, u1 = 0, 1
+        for k in range(4):
+            if p[k] == 0:
+                if q[k] < 0:
+                    return []
+            else:
+                u = q[k] / p[k]
+                if p[k] < 0:
+                    u0 = max(u0, u)
+                else:
+                    u1 = min(u1, u)
+        if u0 > u1:
+            return []
+        x_0 = round(x0 + u0 * dx)
+        y_0 = round(y0 + u0 * dy)
+        x_1 = round(x0 + u1 * dx)
+        y_1 = round(y0 + u1 * dy)
+        res = [[x_0, y_0], [x_1, y_1]]
+
+    return res

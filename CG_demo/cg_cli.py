@@ -38,7 +38,7 @@ if __name__ == '__main__':
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'polygon':
-                        pixels = alg.draw_polygon_gui(p_list, algorithm)
+                        pixels = alg.draw_polygon(p_list, algorithm)
                         for x, y in pixels:
                             canvas[y, x] = color
                     elif item_type == 'ellipse':
@@ -112,6 +112,15 @@ if __name__ == '__main__':
                 s = float(line[4])
                 item_dict[item_id][1] = alg.scale(
                     item_dict[item_id][1], x, y, s)
+            elif line[0] == 'clip':
+                item_id = line[1]
+                x_min = int(line[2])
+                y_min = int(line[3])
+                x_max = int(line[4])
+                y_max = int(line[5])
+                algorithm = line[6]
+                item_dict[item_id][1] = alg.clip(
+                    item_dict[item_id][1], x_min, y_min, x_max, y_max, algorithm)
             ...
 
             line = fp.readline()

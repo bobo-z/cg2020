@@ -22,13 +22,13 @@ from PyQt5.QtWidgets import (
     QFormLayout,
     QLabel,
     QFileDialog,
-    )
+)
 from PyQt5.QtGui import QPainter, QMouseEvent, QColor, QWheelEvent
 from PyQt5.QtCore import QRectF, Qt, QPoint
 import numpy as np
 
 
-#https://mp.weixin.qq.com/s/Wy1iTYoX7_O81ChMflXXfg
+# https://mp.weixin.qq.com/s/Wy1iTYoX7_O81ChMflXXfg
 
 class MyCanvas(QGraphicsView):
     """
@@ -53,8 +53,13 @@ class MyCanvas(QGraphicsView):
         self.is_ellipse_drawing = False
         self.init_x = 0
         self.init_y = 0
+        self.x_min = 0
+        self.x_max = 0
+        self.y_min = 0
+        self.y_max = 0
         self.p_l = []
         self.color = QColor(0, 0, 0)
+        self._item = None
 
     def status_change(self):
         if self.is_polygon_drawing:
@@ -66,6 +71,8 @@ class MyCanvas(QGraphicsView):
             self.finish_draw()
             self.is_polygon_drawing = False
             self.is_curve_drawing = False
+            self.is_rotate = False
+            self.is_scale = False
 
     def start_set_pen(self, color):
         self.status = ''
@@ -103,6 +110,11 @@ class MyCanvas(QGraphicsView):
         self.status = 'scale'
         self.temp_item = self.item_dict[self.selected_id]
 
+    def start_clip(self, algorithm):
+        self.status = 'clip'
+        self.temp_algorithm = algorithm
+        self.temp_item = self.item_dict[self.selected_id]
+
     def finish_draw(self):
         self.temp_id = self.main_window.get_id()
 
@@ -123,7 +135,6 @@ class MyCanvas(QGraphicsView):
         self.updateScene([self.sceneRect()])
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        # self.timer.start(1000)
         pos = self.mapToScene(event.localPos().toPoint())
         x = int(pos.x())
         y = int(pos.y())
@@ -159,16 +170,28 @@ class MyCanvas(QGraphicsView):
             elif self.status == 'translate':
                 self.init_x, self.init_y = x, y
             elif self.status == 'rotate':
+                self.is_rotate = True
                 self.init_x, self.init_y = x, y
+                self._item = MyItem('dot', self.status, [
+                    [x, y]], '', QColor(0, 0, 0))
+                self.scene().addItem(self._item)
             elif self.status == 'scale':
+                self.is_sca1e = True
                 self.init_x, self.init_y = x, y
-            elif self.status == 'modify':#TODO
+                self._item = MyItem('dot', self.status, [
+                    [x, y]], '', QColor(0, 0, 0))
+                self.scene().addItem(self._item)
+            elif self.status == 'clip':
+                self.init_x, self.init_y = x, y
+                self._item = MyItem('clip_rect', self.status, [
+                    [x, y], [x, y]], '', QColor(0, 0, 0))
+                self.scene().addItem(self._item)
+
+            elif self.status == 'modify':  # TODO
                 pass
         else:
             pass
-
         self.updateScene([self.sceneRect()])
-        # super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         pos = self.mapToScene(event.localPos().toPoint())
@@ -178,7 +201,6 @@ class MyCanvas(QGraphicsView):
             self.temp_item.p_list[1] = [x, y]
         elif self.status == 'polygon' and self.is_polygon_drawing:
             self.temp_item.p_list[-1] = [x, y]
-            # print(self.temp_item.p_list)
         elif self.status == 'ellipse' and self.is_ellipse_drawing:
             self.temp_item.p_list[1] = [x, y]
         elif self.status == 'curve' and self.is_curve_drawing:
@@ -186,13 +208,26 @@ class MyCanvas(QGraphicsView):
         elif self.status == 'translate':
             self.temp_item.p_list = alg.translate(
                 self.p_l, x - self.init_x, y - self.init_y)
-        elif self.status == 'modify':#TODO
+        elif self.status == 'clip':
+            self._item.p_list[1] = [x, y]
+            if self.init_x < x:
+                self.x_min, self.x_max = self.init_x, x
+            else:
+                self.x_min, self.x_max = x, self.init_x
+            if self.init_y < y:
+                self.y_min, self.y_max = self.init_y, y
+            else:
+                self.y_min, self.y_max = y, self.init_y
+
+        elif self.status == 'modify':  # TODO
             pass
 
         self.updateScene([self.sceneRect()])
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() != Qt.LeftButton:
+            return
         if self.status == 'line' and self.is_line_drawing:
             self.item_dict[self.temp_id] = self.temp_item
             self.list_widget.addItem(self.temp_id)
@@ -210,21 +245,39 @@ class MyCanvas(QGraphicsView):
         elif self.status == 'translate':
             self.item_dict[self.selected_id] = self.temp_item
         elif self.status == 'rotate':
+            self.is_rotate = False
             self.item_dict[self.selected_id] = self.temp_item
+            self.scene().removeItem(self._item)
         elif self.status == 'scale':
+            self.is_sca1e = False
             self.item_dict[self.selected_id] = self.temp_item
-        elif self.status == 'modify':#TODO
+            self.scene().removeItem(self._item)
+        elif self.status == 'clip':
+            print(self.temp_item.p_list)
+            print(self.x_min, self.y_min, self.x_max, self.y_max)
+            p_l = self.temp_item.p_list
+            self.temp_item.p_list = alg.clip(
+                p_l,
+                self.x_min,
+                self.y_min,
+                self.x_max,
+                self.y_max,
+                self.temp_algorithm)
+
+            self.scene().removeItem(self._item)
+        elif self.status == 'modify':  # TODO
             pass
+        self.updateScene([self.sceneRect()])
         super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         angle = event.angleDelta()
         angle /= 60
 
-        if self.status == 'rotate':
+        if self.status == 'rotate' and self.is_rotate:
             self.temp_item.p_list = alg.rotate(
                 self.temp_item.p_list, self.init_x, self.init_y, angle.y())
-        elif self.status == 'scale':
+        elif self.status == 'scale' and self.is_sca1e:
             s = 1 + 0.1 * angle.y() / 2
             self.temp_item.p_list = alg.scale(
                 self.temp_item.p_list, self.init_x, self.init_y, s)
@@ -263,6 +316,21 @@ class MyItem(QGraphicsItem):
         self.selected = False
         self.color = color
 
+    def drawPoint(self, painter: QPainter, x):
+        painter.setPen(QColor(0, 0, 0))
+        point_range = 2
+        i = 1
+        for i in range(point_range + 1):
+            painter.drawPoint(x[0] - i, x[1])
+            painter.drawPoint(x[0] + i, x[1])
+            painter.drawPoint(x[0], x[1] - i)
+            painter.drawPoint(x[0], x[1] + i)
+            painter.drawPoint(x[0] - i, x[1] - i)
+            painter.drawPoint(x[0] + i, x[1] + i)
+            painter.drawPoint(x[0] + i, x[1] - 1)
+            painter.drawPoint(x[0] - i, x[1] + 1)
+        painter.drawPoint(*x)
+
     def paint(
             self,
             painter: QPainter,
@@ -277,29 +345,29 @@ class MyItem(QGraphicsItem):
             item_pixels = alg.draw_ellipse(self.p_list)
         elif self.item_type == 'curve':
             item_pixels = alg.draw_curve(self.p_list, self.algorithm)
+        elif self.item_type == 'clip':
+            painter.setPen(QColor(0, 0, 255))
+            painter.drawRect(self.boundingRect())
+            item_pixels = []
+        elif self.item_type == 'rotate':
+            self.drawPoint(painter, self.p_list[0])
+            item_pixels = []
+        elif self.item_type == 'scale':
+            self.drawPoint(painter, self.p_list[0])
+            item_pixels = []
 
         for p in item_pixels:
             painter.drawPoint(*p)
         if self.selected:
-            painter.setPen(QColor(0, 0, 255))
+            painter.setPen(QColor(255, 0, 0))
             painter.drawRect(self.boundingRect())
             for x in self.p_list:
-                painter.setPen(QColor(0, 0, 0))
-                point_range = 2
-                i=1
-                for i in range(point_range+1):
-                    painter.drawPoint(x[0]-i,x[1])
-                    painter.drawPoint(x[0]+i,x[1])
-                    painter.drawPoint(x[0],x[1]-i)
-                    painter.drawPoint(x[0],x[1]+i)
-                    painter.drawPoint(x[0]-i,x[1]-i)
-                    painter.drawPoint(x[0]+i,x[1]+i)
-                    painter.drawPoint(x[0]+i,x[1]-1)
-                    painter.drawPoint(x[0]-i,x[1]+1)
-                painter.drawPoint(*x)
+                self.drawPoint(painter, x)
 
     def boundingRect(self) -> QRectF:
         if self.item_type == 'line':
+            if len(self.p_list) != 2:
+                return QRectF()
             x0, y0 = self.p_list[0]
             x1, y1 = self.p_list[1]
             x = min(x0, x1)
@@ -334,6 +402,18 @@ class MyItem(QGraphicsItem):
             w = max_x - min_x
             h = max_y - min_y
             return QRectF(min_x - 1, min_y - 1, w + 2, h + 2)
+        elif self.item_type == 'clip':
+            x0, y0 = self.p_list[0]
+            x1, y1 = self.p_list[1]
+            x = min(x0, x1)
+            y = min(y0, y1)
+            w = max(x0, x1) - x
+            h = max(y0, y1) - y
+            return QRectF(x - 1, y - 1, w + 2, h + 2)
+        elif self.item_type == 'rotate':
+            return QRectF()
+        elif self.item_type == 'scale':
+            return QRectF()
 
 
 class MainWindow(QMainWindow):
@@ -351,7 +431,7 @@ class MainWindow(QMainWindow):
 
         # 使用QGraphicsView作为画布
         self.scene = QGraphicsScene(self)
-        self.scene.setSceneRect(0, 0, 600,600)
+        self.scene.setSceneRect(0, 0, 600, 600)
         self.scene_color = QColor(255, 255, 255)
         self.canvas_widget = MyCanvas(self.scene, self)
         self.canvas_widget.setFixedSize(605, 605)
@@ -401,6 +481,9 @@ class MainWindow(QMainWindow):
         translate_act.triggered.connect(self.translate_action)
         rotate_act.triggered.connect(self.rotate_action)
         scale_act.triggered.connect(self.scale_action)
+        clip_cohen_sutherland_act.triggered.connect(
+            self.clip_cohen_sutherland_action)
+        clip_liang_barsky_act.triggered.connect(self.clip_liang_barsky_action)
         self.list_widget.currentTextChanged.connect(
             self.canvas_widget.selection_changed)
 
@@ -433,7 +516,7 @@ class MainWindow(QMainWindow):
         dialog = QDialog()
         dialog.setWindowTitle('重置画布信息')
         dialog.setWindowModality(Qt.WindowModal)
-        dialog.resize(300,300)
+        dialog.resize(300, 300)
 
         btn1 = QPushButton(dialog)
         btn1.setText('确定')
@@ -456,18 +539,18 @@ class MainWindow(QMainWindow):
         color_btn = QPushButton('画布颜色', dialog)
         color_btn.clicked.connect(self.set_scene_color)
 
-
         formlayout = QFormLayout(dialog)
-        formlayout.addRow(QLabel('宽'),width_box)
-        formlayout.addRow(QLabel('高'),height_box)
+        formlayout.addRow(QLabel('宽'), width_box)
+        formlayout.addRow(QLabel('高'), height_box)
         formlayout.addRow(color_btn)
 
         res = dialog.exec()
         if res == 1:
             width = width_box.value()
             height = height_box.value()
-            self.canvas_widget.resize(width+5, height+5)
-            self.scene.setSceneRect(0, 0, width,height)#both scene and canvas should be changed
+            self.canvas_widget.resize(width + 5, height + 5)
+            # both scene and canvas should be changed
+            self.scene.setSceneRect(0, 0, width, height)
             self.scene.setBackgroundBrush(self.scene_color)
             self.canvas_widget.setFixedSize(width, height)
             self.list_widget.clearSelection()
@@ -478,12 +561,12 @@ class MainWindow(QMainWindow):
 
     def save_canvas_action(self):
         self.statusBar().showMessage('保存画布')
-        filename = QFileDialog.getSaveFileName(self, '保存画布','./','Images (*.png *.bmp *.jpg)')
+        filename = QFileDialog.getSaveFileName(
+            self, '保存画布', './', 'Images (*.png *.bmp *.jpg)')
         if filename[0]:
-            pix = self.canvas_widget.grab(self.canvas_widget.sceneRect().toRect())
+            pix = self.canvas_widget.grab(
+                self.canvas_widget.sceneRect().toRect())
             pix.save(filename[0])
-            
-
 
     def line_naive_action(self):
         self.item_cnt -= 1
@@ -558,10 +641,23 @@ class MainWindow(QMainWindow):
             self.canvas_widget.start_scale()
             self.statusBar().showMessage('缩放图元')
 
+    def clip_cohen_sutherland_action(self):
+        if self.canvas_widget.selected_id:
+            item_type = self.canvas_widget.item_dict[self.canvas_widget.selected_id].item_type
+            if item_type == 'line':
+                self.canvas_widget.start_clip('Cohen-Sutherland')
+                self.statusBar().showMessage('Cohen_Sutherland算法裁剪图元')
+
+    def clip_liang_barsky_action(self):
+        if self.canvas_widget.selected_id:
+            item_type = self.canvas_widget.item_dict[self.canvas_widget.selected_id].item_type
+            if item_type == 'line':
+                self.canvas_widget.start_clip('Liang-Barsky')
+                self.statusBar().showMessage('Liang-Barsky算法裁剪图元')
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     mw = MainWindow()
     mw.show()
     sys.exit(app.exec_())
-
