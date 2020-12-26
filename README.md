@@ -36,11 +36,11 @@
 即可运行gui画图程序。
 
 图形界面总览：
-![](img/1.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/1.png)
 ####  图元绘制
 在菜单栏绘制一栏下即可选择绘制的图元类型，对于线段、多边形、曲线还可以选择绘制图元的算法。
 
-![](img/2.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/2.png)
 
 * 绘制直线
   
@@ -48,7 +48,7 @@
 
     在空白处使用鼠标左键点击，拖动鼠标，并在合适位置释放，即可画出直线。
 
-![](img/3.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/3.png)
 
 * 绘制多边形
 
@@ -56,7 +56,7 @@
 
     在空白处用鼠标左键点击，拖动，并在合适位置释放以画出多边形的第一条边。若要继续添加边，则点击鼠标左键，拖动并释放，程序会继续添加边；若结束绘画，则单击鼠标右键，多边形首尾自动相连。
 
-![](img/4.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/4.png)
 
 * 绘制椭圆
 
@@ -64,7 +64,7 @@
 
     单击鼠标左键并拖动，在合适位置释放。即可得到点下鼠标和松开鼠标位置下构成的矩形的内切椭圆。
 
-![](img/5.img)
+![](https://github.com/bobo-z/cg2020/blob/main/img/5.img)
 
 * 绘制曲线
 
@@ -74,7 +74,7 @@
 
 
 
-![](img/6.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/6.png)
 > 由于绘制B样条曲线所需的程序开销较大，在绘制过程中以及绘制结束之后，都会造成程序的卡顿，若要测试功能建议最后再绘制B样条曲线，以免对后续测试造成不流畅的体验。
 
 #### 图元编辑
@@ -111,7 +111,7 @@
 
 点击菜单栏`文件->设置画笔`即会弹出此对话框。选择颜色并点击`OK`则会将画笔设置为对应颜色
 
-![](img/7.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/7.png)
 
 * 重置画布
 
@@ -121,10 +121,10 @@
 
 点击确定，则会按照设置的长、宽、颜色重置画布。
 
-![](img/8.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/8.png)
 
 * 保存画布
 
 点击菜单栏`文件->保存画布`即会弹出此窗口，可以选择文件的保存路径与文件名。点击确定即可完成画布的保存
 
-![](img/9.png)
+![](https://github.com/bobo-z/cg2020/blob/main/img/9.png)
